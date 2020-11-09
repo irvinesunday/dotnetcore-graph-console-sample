@@ -4,6 +4,7 @@ using System.Net.Http;
 using Microsoft.Identity.Client;
 using Microsoft.Graph;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Graph.Auth;
 
 namespace ConsoleGraphTest
 {
@@ -36,14 +37,12 @@ namespace ConsoleGraphTest
             }
 
             // Direct query using HTTPClient (for beta endpoint calls or not available in Graph SDK)
-            //HttpClient httpClient = GetAuthenticatedHTTPClient(config);
-            //Uri Uri = new Uri("https://graph.microsoft.com/v1.0/users?$top=1");
-            //var httpResult = httpClient.GetStringAsync(Uri).Result;
+            HttpClient httpClient = GetAuthenticatedHTTPClient(config);
+            Uri Uri = new Uri("https://graph.microsoft.com/v1.0/users?$top=1");
+            var httpResult = httpClient.GetStringAsync(Uri).Result;
 
-            //Console.WriteLine("HTTP Result");
-            //Console.WriteLine(httpResult);
-
-            Console.ReadLine();
+            Console.WriteLine("HTTP Result");
+            Console.WriteLine(httpResult);
         }
 
         private static IConfigurationRoot LoadAppSettings()
@@ -73,22 +72,29 @@ namespace ConsoleGraphTest
             }
         }
 
+        /// <summary>
+        /// Creates an IAuthenticationProvider object.
+        /// </summary>
+        /// <param name="config"></param>
+        /// <returns>A client credential provider instance of an IAuthenticationProvider.</returns>
         private static IAuthenticationProvider CreateAuthorizationProvider(IConfigurationRoot config)
         {
+            // See other examples of creating IAuthenticationProvider objects:
+            // https://github.com/microsoftgraph/msgraph-sdk-dotnet-auth#example
+
             var clientId = config["applicationId"];
             var clientSecret = config["applicationSecret"];
-            var redirectUri = config["redirectUri"];
-            var authority = $"https://login.microsoftonline.com/{config["tenantId"]}/v2.0";
+            var tenantId = config["tenantId"];
 
-            List<string> scopes = new List<string>();
-            scopes.Add("https://graph.microsoft.com/.default");
-
-            var cca = ConfidentialClientApplicationBuilder.Create(clientId)
-                                                    .WithAuthority(authority)
-                                                    .WithRedirectUri(redirectUri)
+            var cca = ConfidentialClientApplicationBuilder
+                                                    .Create(clientId)
+                                                    .WithTenantId(tenantId)
                                                     .WithClientSecret(clientSecret)
+                                                    // The Authority is a required parameter when your application is configured
+                                                    // to accept authentications only from the tenant where it is registered.
                                                     .Build();
-            return new MsalAuthenticationProvider(cca, scopes.ToArray());
+
+            return new ClientCredentialProvider(cca);
         }
 
         private static GraphServiceClient GetAuthenticatedGraphClient(IConfigurationRoot config)
@@ -101,7 +107,7 @@ namespace ConsoleGraphTest
         private static HttpClient GetAuthenticatedHTTPClient(IConfigurationRoot config)
         {
             var authenticationProvider = CreateAuthorizationProvider(config);
-            _httpClient = new HttpClient(new AuthHandler(authenticationProvider, new HttpClientHandler()));
+            _httpClient = new HttpClient(new AuthenticationHandler(authenticationProvider, new HttpClientHandler()));
             return _httpClient;
         }
     }
