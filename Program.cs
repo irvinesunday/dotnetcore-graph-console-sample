@@ -1,5 +1,6 @@
 ﻿/* This is a sample daemon desktop app that acquires tokens and calls MS Graph on behalf of itself with no signed-in user
- * Read more: MSAL authentication flows and app scenarios: https://docs.microsoft.com/en-us/azure/active-directory/develop/authentication-flows-app-scenarios
+ * Read more: MSAL authentication flows and app scenarios:
+ * https://docs.microsoft.com/en-us/azure/active-directory/develop/authentication-flows-app-scenarios
  */
 
 /* 4 steps:
@@ -40,7 +41,7 @@ namespace ConsoleGraphTest
             List<QueryOption> options = new List<QueryOption>
             {
                 new QueryOption("$top", "5"),
-               // new QueryOption("$orderby", "displayName desc")
+                new QueryOption("$orderby", "displayName desc")
             };
 
             // Call MS Graph
